@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Pessoa {
+  id_pes     BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  nome_pes   String   @db.VarChar
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model autor {
+  id_aut                Int           @id(map: "autores_pkey") @default(autoincrement())
+  nome_aut              String        @db.VarChar(100)
+  biografia_aut         String?
+  nacionalidade_aut     String?       @db.VarChar(50)
+  data_nascimento_aut   DateTime?     @db.Date
+  data_falecimento_aut  DateTime?     @db.Date
+  conjuge_aut           String?       @db.VarChar(100)
+  quantidade_filhos_aut Int?
+  foto_aut              String?       @db.VarChar(255)
+  livro_autor           livro_autor[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model avaliacoes {
+  id_ava             Int       @id @default(autoincrement())
+  nota_ava           Int
+  data_avaliacao_ava DateTime? @db.Date
+  id_usu             Int?
+  id_liv             Int?
+  livros             livros?   @relation(fields: [id_liv], references: [id_liv], onDelete: NoAction, onUpdate: NoAction, map: "fk_avaliacoes_livro")
+  usuarios           usuarios? @relation(fields: [id_usu], references: [id_usu], onDelete: NoAction, onUpdate: NoAction, map: "fk_avaliacoes_usuario")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model categorias {
+  id_cat             Int      @id @default(autoincrement())
+  nome_categoria_cat String   @db.VarChar(50)
+  livros             livros[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model comentarios {
+  id_com              Int                   @id @default(autoincrement())
+  texto_com           String
+  data_comentario_com DateTime?             @db.Date
+  hora_comentario_com DateTime?             @db.Time(6)
+  id_usu              Int?
+  id_liv              Int?
+  livros              livros?               @relation(fields: [id_liv], references: [id_liv], onDelete: NoAction, onUpdate: NoAction, map: "fk_comentarios_livro")
+  usuarios            usuarios?             @relation(fields: [id_usu], references: [id_usu], onDelete: NoAction, onUpdate: NoAction, map: "fk_comentarios_usuario")
+  curtidas_comentario curtidas_comentario[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model curtidas_comentario {
+  id_usu      Int
+  id_com      Int
+  comentarios comentarios @relation(fields: [id_com], references: [id_com], onDelete: NoAction, onUpdate: NoAction, map: "fk_curtidas_comentario")
+  usuarios    usuarios    @relation(fields: [id_usu], references: [id_usu], onDelete: NoAction, onUpdate: NoAction, map: "fk_curtidas_usuario")
+
+  @@id([id_usu, id_com])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model lista_livros {
+  id_lis Int
+  id_liv Int
+  listas listas @relation(fields: [id_lis], references: [id_lis], onDelete: NoAction, onUpdate: NoAction, map: "fk_listalivros_lista")
+  livros livros @relation(fields: [id_liv], references: [id_liv], onDelete: NoAction, onUpdate: NoAction, map: "fk_listalivros_livro")
+
+  @@id([id_lis, id_liv])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listas {
+  id_lis           Int            @id @default(autoincrement())
+  nome_lista_lis   String         @db.VarChar(100)
+  descricao_lis    String?
+  data_criacao_lis DateTime?      @default(now()) @db.Date
+  id_usu           Int?
+  lista_livros     lista_livros[]
+  usuarios         usuarios?      @relation(fields: [id_usu], references: [id_usu], onDelete: NoAction, onUpdate: NoAction, map: "fk_listas_usuario")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model livro_autor {
+  id_liv Int
+  id_aut Int
+  autor  autor  @relation(fields: [id_aut], references: [id_aut], onDelete: NoAction, onUpdate: NoAction, map: "fk_livroautor_autor")
+  livros livros @relation(fields: [id_liv], references: [id_liv], onDelete: NoAction, onUpdate: NoAction, map: "fk_livroautor_livro")
+
+  @@id([id_liv, id_aut])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model livros {
+  id_liv             Int            @id @default(autoincrement())
+  titulo_liv         String         @db.VarChar(150)
+  sinopse_liv        String?
+  isbn_liv           String?        @unique @db.VarChar(20)
+  ano_publicacao_liv Int?
+  numero_paginas_liv Int?
+  capa_liv           String?        @db.VarChar(255)
+  id_cat             Int?
+  avaliacoes         avaliacoes[]
+  comentarios        comentarios[]
+  lista_livros       lista_livros[]
+  livro_autor        livro_autor[]
+  categorias         categorias?    @relation(fields: [id_cat], references: [id_cat], onDelete: NoAction, onUpdate: NoAction, map: "fk_livros_categoria")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model usuarios {
+  id_usu              Int                   @id @default(autoincrement())
+  nome_usu            String                @db.VarChar(100)
+  nickname_usu        String                @unique @db.VarChar(50)
+  email_usu           String                @unique @db.VarChar(100)
+  senha_usu           String                @db.VarChar(255)
+  data_nascimento_usu DateTime?             @db.Date
+  bio_usu             String?
+  foto_perfil_usu     String?               @db.VarChar(255)
+  data_cadastro_usu   DateTime?             @default(now()) @db.Date
+  tipo_usuario_usu    String?               @default("comum") @db.VarChar(20)
+  avaliacoes          avaliacoes[]
+  comentarios         comentarios[]
+  curtidas_comentario curtidas_comentario[]
+  listas              listas[]
+}
