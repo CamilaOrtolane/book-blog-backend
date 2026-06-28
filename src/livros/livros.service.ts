@@ -50,6 +50,47 @@ export class LivrosService {
       .sort(() => Math.random() - 0.5)
       .slice(0, 12);
   }
+
+  async buscarCatalogo() {
+  const categorias = [
+    'romance',
+    'fantasy',
+    'horror',
+    'mystery',
+    'science fiction',
+    'adventure',
+    'classic literature',
+  ];
+
+  const requisicoes = categorias.map((categoria) =>
+    axios.get('https://openlibrary.org/search.json', {
+      params: {
+        q: categoria,
+        limit: 20,
+      },
+      timeout: 30000,
+      headers: {
+        'User-Agent': 'book-blog-backend/1.0',
+      },
+    }).then((response) =>
+      response.data.docs
+        .filter((livro) => livro.cover_i)
+        .map((livro) => ({
+          titulo: livro.title,
+          autor: livro.author_name?.[0] ?? 'Autor desconhecido',
+          ano: livro.first_publish_year ?? null,
+          isbn: livro.isbn?.[0] ?? null,
+          capa: `https://covers.openlibrary.org/b/id/${livro.cover_i}-M.jpg`,
+          categoria,
+        }))
+    )
+  );
+
+  const resultados = await Promise.all(requisicoes);
+
+  return resultados.flat();
+}
+
 }
 
     // async buscarLivros(termo: string) {

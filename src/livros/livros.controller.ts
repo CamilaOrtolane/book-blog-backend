@@ -11,5 +11,10 @@ export class LivrosController {
   buscarAleatorios() {
     return this.livrosService.buscarLivrosAleatorios();
   }
+
+  @Get('catalogo')
+  buscarCatalogo() {
+    return this.livrosService.buscarCatalogo();
+  }
 }
 
