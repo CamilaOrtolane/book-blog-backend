@@ -6,10 +6,10 @@ import { UpdateLivroDto } from './dto/update-livro.dto';
 @Controller('livros')
 export class LivrosController {
   constructor(private readonly livrosService: LivrosService) {}
- 
+
   @Get()
-  buscar(@Query('q') q: string) {
-    return this.livrosService.buscarLivros(q || 'romance');
+  buscarAleatorios() {
+    return this.livrosService.buscarLivrosAleatorios();
   }
-  
 }
+
