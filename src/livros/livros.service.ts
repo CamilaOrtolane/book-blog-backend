@@ -1,139 +1,103 @@
+import 'dotenv/config';
 import { Injectable } from '@nestjs/common';
-import { CreateLivroDto } from './dto/create-livro.dto';
-import { UpdateLivroDto } from './dto/update-livro.dto';
-import axios from 'axios';
+import { Pool } from 'pg';
 
 @Injectable()
 export class LivrosService {
+  private pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
 
-  private temas = [
-    'romance',
-    'fantasy',
-    'mystery',
-    'adventure',
-    'science fiction',
-    'classic literature',
-    'drama',
-    'young adult',
-    'history',
-    'poetry',
-    'thriller',
-    'philosophy',
-  ];
+  async buscarAleatorios() {
+    const resultado = await this.pool.query(`
+      select 
+        l.id_liv as id,
+        l.titulo_liv as titulo,
+        l.sinopse_liv as sinopse,
+        l.isbn_liv as isbn,
+        l.ano_publicacao_liv as ano,
+        l.capa_liv as capa,
+        c.nome_categoria_cat as categoria,
+        coalesce(round(avg(a.nota_ava)::numeric, 1), 0) as media
+      from livros l
+      left join categorias c on c.id_cat = l.id_cat
+      left join avaliacoes a on a.id_liv = l.id_liv
+      group by l.id_liv, c.nome_categoria_cat
+      order by random()
+      limit 12;
+    `);
 
-  async buscarLivrosAleatorios() {
-    const temaSorteado =
-      this.temas[Math.floor(Math.random() * this.temas.length)];
+    return resultado.rows;
 
-    const response = await axios.get('https://openlibrary.org/search.json', {
-      params: {
-        q: temaSorteado,
-        limit: 40,
-      },
-      timeout: 30000,
-      headers: {
-        'User-Agent': 'book-blog-backend/1.0',
-      },
-    });
-
-    const livros = response.data.docs
-      .filter((livro) => livro.cover_i)
-      .map((livro) => ({
-        titulo: livro.title,
-        autor: livro.author_name?.[0] ?? 'Autor desconhecido',
-        ano: livro.first_publish_year ?? null,
-        isbn: livro.isbn?.[0] ?? null,
-        capa: `https://covers.openlibrary.org/b/id/${livro.cover_i}-M.jpg`,
-      }));
-
-    return livros
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 12);
+    console.log('DATABASE_URL:', process.env.DATABASE_URL);
   }
 
   async buscarCatalogo() {
-  const categorias = [
-    'romance',
-    'fantasy',
-    'horror',
-    'mystery',
-    'science fiction',
-    'adventure',
-    'classic literature',
-  ];
+    const resultado = await this.pool.query(`
+      select 
+        l.id_liv as id,
+        l.titulo_liv as titulo,
+        l.sinopse_liv as sinopse,
+        l.isbn_liv as isbn,
+        l.ano_publicacao_liv as ano,
+        l.capa_liv as capa,
+        c.nome_categoria_cat as categoria,
+        coalesce(round(avg(a.nota_ava)::numeric, 1), 0) as media
+      from livros l
+      left join categorias c on c.id_cat = l.id_cat
+      left join avaliacoes a on a.id_liv = l.id_liv
+      group by l.id_liv, c.nome_categoria_cat
+      order by l.titulo_liv asc;
+    `);
 
-  const requisicoes = categorias.map((categoria) =>
-    axios.get('https://openlibrary.org/search.json', {
-      params: {
-        q: categoria,
-        limit: 20,
-      },
-      timeout: 30000,
-      headers: {
-        'User-Agent': 'book-blog-backend/1.0',
-      },
-    }).then((response) =>
-      response.data.docs
-        .filter((livro) => livro.cover_i)
-        .map((livro) => ({
-          titulo: livro.title,
-          autor: livro.author_name?.[0] ?? 'Autor desconhecido',
-          ano: livro.first_publish_year ?? null,
-          isbn: livro.isbn?.[0] ?? null,
-          capa: `https://covers.openlibrary.org/b/id/${livro.cover_i}-M.jpg`,
-          categoria,
-        }))
-    )
-  );
+    return resultado.rows;
+  }
 
-  const resultados = await Promise.all(requisicoes);
+  async buscarPorId(id: number) {
+    const resultado = await this.pool.query(
+      `
+      select 
+        l.id_liv as id,
+        l.titulo_liv as titulo,
+        l.sinopse_liv as sinopse,
+        l.isbn_liv as isbn,
+        l.ano_publicacao_liv as ano,
+        l.capa_liv as capa,
+        c.nome_categoria_cat as categoria,
+        coalesce(round(avg(a.nota_ava)::numeric, 1), 0) as media
+      from livros l
+      left join categorias c on c.id_cat = l.id_cat
+      left join avaliacoes a on a.id_liv = l.id_liv
+      where l.id_liv = $1
+      group by l.id_liv, c.nome_categoria_cat;
+      `,
+      [id],
+    );
 
-  return resultados.flat();
+    return resultado.rows[0];
+  }
+
+  async avaliarLivro(id_liv: number, nota_ava: number, id_usu = 1) {
+    await this.pool.query(
+      `
+      insert into avaliacoes (
+        nota_ava,
+        data_avaliacao_ava,
+        id_usu,
+        id_liv
+      )
+      values ($1, current_date, $2, $3);
+      `,
+      [nota_ava, id_usu, id_liv],
+    );
+
+    return {
+      mensagem: 'Avaliado com sucesso',
+    };
+  }
+
+  
 }
-
-}
-
-    // async buscarLivros(termo: string) {
-    //   const response = await axios.get('https://openlibrary.org/search.json', {
-    //     params: {
-    //       q: termo,
-    //       limit: 20,
-    //     },
-    //     timeout: 30000,
-    //     headers: {
-    //       'User-Agent': 'book-blog-backend/1.0',
-    //     },
-    //   });
-
-    //   return response.data.docs.map((livro) => ({
-    //     titulo: livro.title,
-    //     autor: livro.author_name?.[0] ?? 'Autor desconhecido',
-    //     ano: livro.first_publish_year ?? null,
-    //     isbn: livro.isbn?.[0] ?? null,
-    //     capa: livro.cover_i
-    //       ? `https://covers.openlibrary.org/b/id/${livro.cover_i}-M.jpg`
-    //       : null,
-    //   }));
-    // }
-
-
-
-  // create(createLivroDto: CreateLivroDto) {
-  //   return 'This action adds a new livro';
-  // }
-
-  // findAll() {
-  //   return `This action returns all livros`;
-  // }
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} livro`;
-  // }
-
-  // update(id: number, updateLivroDto: UpdateLivroDto) {
-  //   return `This action updates a #${id} livro`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} livro`;
-  // }

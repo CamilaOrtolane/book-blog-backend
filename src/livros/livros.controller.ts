@@ -1,7 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { LivrosService } from './livros.service';
-import { CreateLivroDto } from './dto/create-livro.dto';
-import { UpdateLivroDto } from './dto/update-livro.dto';
 
 @Controller('livros')
 export class LivrosController {
@@ -9,12 +7,28 @@ export class LivrosController {
 
   @Get()
   buscarAleatorios() {
-    return this.livrosService.buscarLivrosAleatorios();
+    return this.livrosService.buscarAleatorios();
   }
 
   @Get('catalogo')
   buscarCatalogo() {
     return this.livrosService.buscarCatalogo();
   }
-}
 
+  @Get(':id')
+  buscarPorId(@Param('id') id: string) {
+    return this.livrosService.buscarPorId(Number(id));
+  }
+
+  @Post(':id/avaliar')
+  avaliarLivro(
+    @Param('id') id: string,
+    @Body() body: { nota_ava: number; id_usu?: number },
+  ) {
+    return this.livrosService.avaliarLivro(
+      Number(id),
+      Number(body.nota_ava),
+      body.id_usu ?? 1,
+    );
+  }
+}

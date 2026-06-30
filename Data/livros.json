@@ -1,0 +1,20 @@
+[
+  {
+    "titulo": "Orgulho e Preconceito",
+    "autor": "Jane Austen",
+    "categoria": "Romance",
+    "ano": 1813,
+    "isbn": "9780141439518",
+    "capa": "https://covers.openlibrary.org/b/isbn/9780141439518-M.jpg",
+    "sinopse": null
+  },
+  {
+    "titulo": "Drácula",
+    "autor": "Bram Stoker",
+    "categoria": "Terror",
+    "ano": 1897,
+    "isbn": "9780141439846",
+    "capa": "https://covers.openlibrary.org/b/isbn/9780141439846-M.jpg",
+    "sinopse": null
+  }
+]
